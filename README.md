@@ -1,5 +1,7 @@
 # Northstar Video Player
 
+[Download Northstar for macOS](https://thomaswales26-hash.github.io/videoplayer/) · [GitHub releases](https://github.com/thomaswales26-hash/videoplayer/releases)
+
 A native macOS video player with a universal Apple Silicon and Intel build. It
 uses AVKit/AVFoundation for playback, includes standard transport and
 fullscreen controls, plays Matroska (MKV) files through FFmpeg, and detects

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="Northstar is a universal macOS video player for 4K/UHD video, MKV files, DVDs, and Blu-ray data discs.">
+  <title>Northstar — Video, in your orbit</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #090b12;
+      color: #f3f4fa;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --muted: #a0a5b5;
+      --accent: #8793ff;
+      --line: rgb(255 255 255 / 9%);
+      --panel: rgb(255 255 255 / 4%);
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    a { color: inherit; }
+    .wrap { width: min(1080px, calc(100% - 48px)); margin-inline: auto; }
+    header { height: 78px; display: flex; align-items: center; }
+    .brand { display: flex; gap: 11px; align-items: center; text-decoration: none; }
+    .brand-icon { color: var(--accent); font-size: 27px; line-height: 1; }
+    .brand-name { font-size: 12px; font-weight: 750; letter-spacing: .19em; }
+    .brand-sub { margin-top: 3px; color: var(--muted); font-size: 9px; letter-spacing: .16em; }
+    .nav { display: flex; align-items: center; gap: 27px; margin-left: auto; font-size: 12px; }
+    .nav a { color: var(--muted); text-decoration: none; }
+    .nav a:hover { color: #fff; }
+    .nav .nav-download { color: #fff; }
+
+    .hero {
+      position: relative; display: grid; grid-template-columns: 1.08fr .92fr; gap: 40px;
+      align-items: center; min-height: 540px; padding-block: 72px 88px;
+    }
+    .hero::before {
+      position: absolute; z-index: -1; content: ""; width: 470px; height: 470px;
+      top: 10px; right: 0; border-radius: 50%;
+      background: radial-gradient(circle, rgb(91 106 255 / 19%), rgb(91 106 255 / 0%) 69%);
+      filter: blur(14px);
+    }
+    .eyebrow { color: #aab2ff; font-size: 10px; font-weight: 700; letter-spacing: .2em; }
+    h1 { max-width: 590px; margin: 18px 0; font-size: clamp(44px, 6vw, 70px); line-height: .99; letter-spacing: -.065em; }
+    h1 span { color: var(--accent); }
+    .lead { max-width: 480px; color: #b4b8c5; font-size: 16px; line-height: 1.8; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 29px; }
+    .button {
+      display: inline-flex; min-height: 44px; align-items: center; justify-content: center;
+      gap: 9px; padding: 0 17px; border: 1px solid var(--line); border-radius: 9px;
+      background: var(--panel); font-size: 12px; font-weight: 650; text-decoration: none;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .button:hover { transform: translateY(-2px); background: rgb(255 255 255 / 9%); }
+    .button-primary { border-color: transparent; background: #707df0; color: white; }
+    .button-primary:hover { background: #818dff; }
+    .download-note { min-height: 17px; margin-top: 11px; color: var(--muted); font-size: 11px; }
+    .download-note a { color: #d6d9ff; }
+    .device {
+      position: relative; display: grid; min-height: 330px; place-items: center;
+      border: 1px solid rgb(255 255 255 / 11%); border-radius: 19px;
+      background: linear-gradient(145deg, #171b2a, #10131d 69%);
+      box-shadow: 0 32px 100px rgb(0 0 0 / 40%), inset 0 1px rgb(255 255 255 / 6%);
+      transform: perspective(1000px) rotateY(-7deg) rotateX(2deg);
+    }
+    .screen { display: grid; width: 79%; aspect-ratio: 16 / 10; place-items: center; overflow: hidden; border: 1px solid rgb(255 255 255 / 12%); border-radius: 10px; background: radial-gradient(ellipse at 50% 44%, #373c78 0, #1d2341 24%, #121522 69%); }
+    .screen-orbit { position: relative; display: grid; width: 96px; height: 96px; place-items: center; border: 1px solid rgb(204 210 255 / 44%); border-radius: 50%; box-shadow: 0 0 50px rgb(119 133 255 / 28%); }
+    .screen-orbit::before, .screen-orbit::after { position: absolute; content: ""; width: 170px; height: 58px; border: 1px solid rgb(196 204 255 / 27%); border-radius: 50%; transform: rotate(-32deg); }
+    .screen-orbit::after { transform: rotate(53deg); }
+    .screen-play { z-index: 1; margin-left: 5px; color: #dce0ff; font-size: 31px; }
+    .device-caption { position: absolute; right: 18px; bottom: 15px; color: #7f8596; font-size: 9px; letter-spacing: .16em; }
+    .spec-strip { display: grid; grid-template-columns: repeat(4, 1fr); padding: 24px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .spec { padding: 0 20px; border-right: 1px solid var(--line); }
+    .spec:first-child { padding-left: 0; }
+    .spec:last-child { border: 0; }
+    .spec strong { display: block; font-size: 12px; font-weight: 650; }
+    .spec span { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    section.content { padding-block: 82px; }
+    .section-heading { max-width: 600px; margin-bottom: 30px; }
+    h2 { margin: 0 0 10px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.045em; }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .feature { min-height: 150px; padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .feature-icon { color: var(--accent); font-size: 17px; }
+    .feature h3 { margin: 17px 0 7px; font-size: 13px; }
+    .feature p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+    .requirements { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 25px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .requirements h3 { margin: 0 0 8px; font-size: 12px; }
+    .requirements p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+    footer { display: flex; justify-content: space-between; gap: 18px; padding-block: 23px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    footer a { color: #c1c6ff; text-decoration: none; }
+    @media (max-width: 720px) {
+      .wrap { width: min(100% - 36px, 560px); }
+      .nav { gap: 16px; }
+      .nav .nav-about { display: none; }
+      .hero { grid-template-columns: 1fr; gap: 34px; min-height: initial; padding-block: 64px; }
+      .device { min-height: 280px; transform: none; }
+      .spec-strip { grid-template-columns: 1fr 1fr; gap: 20px 0; }
+      .spec:nth-child(2) { border: 0; }
+      .spec:nth-child(3) { padding-left: 0; }
+      .features { grid-template-columns: 1fr; }
+      .feature { min-height: 125px; }
+      section.content { padding-block: 58px; }
+    }
+    @media (max-width: 420px) {
+      .nav { gap: 12px; font-size: 11px; }
+      .requirements { grid-template-columns: 1fr; gap: 18px; padding: 20px; }
+      footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <a class="brand" href="#" aria-label="Northstar home">
+      <span class="brand-icon" aria-hidden="true">◉</span>
+      <span><span class="brand-name">NORTHSTAR</span><span class="brand-sub">VIDEO PLAYER</span></span>
+    </a>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="nav-about" href="#features">Features</a>
+      <a class="nav-about" href="#requirements">Requirements</a>
+      <a class="nav-download" href="#download">Download&nbsp; ↓</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div>
+        <div class="eyebrow">MADE FOR MAC · APPLE SILICON + INTEL</div>
+        <h1>Your movies.<br><span>Your orbit.</span></h1>
+        <p class="lead">A focused video player for your Mac. Enjoy 4K and UHD video, browse optical discs, and bring MKV files along for the ride.</p>
+        <div class="actions" id="download">
+          <a class="button button-primary" id="dmg-link" href="https://github.com/thomaswales26-hash/videoplayer/releases/latest">↓&nbsp; Download for macOS</a>
+          <a class="button" id="pkg-link" href="https://github.com/thomaswales26-hash/videoplayer/releases/latest">Installer package&nbsp; ↗</a>
+        </div>
+        <p class="download-note" id="release-note" aria-live="polite">Universal build · macOS 13 or later · <a href="https://github.com/thomaswales26-hash/videoplayer/releases">all releases</a></p>
+      </div>
+      <div class="device" aria-label="Illustration of the Northstar video player">
+        <div class="screen"><div class="screen-orbit"><span class="screen-play">▶</span></div></div>
+        <span class="device-caption">NORTHSTAR · UHD</span>
+      </div>
+    </section>
+
+    <div class="spec-strip wrap" aria-label="Supported capabilities">
+      <div class="spec"><strong>4K / UHD</strong><span>Hardware- and codec-dependent</span></div>
+      <div class="spec"><strong>MKV files</strong><span>With FFmpeg installed</span></div>
+      <div class="spec"><strong>DVD + Blu-ray</strong><span>Browse mounted video files</span></div>
+      <div class="spec"><strong>Universal app</strong><span>Apple Silicon and Intel Macs</span></div>
+    </div>
+
+    <section class="content wrap" id="features">
+      <div class="section-heading">
+        <h2>Everything in its right place.</h2>
+        <p>A native macOS experience that keeps playback simple and your movie library close.</p>
+      </div>
+      <div class="features">
+        <article class="feature"><span class="feature-icon">▣</span><h3>Made for the big screen</h3><p>AVKit playback with familiar transport controls and fullscreen support. 4K and HDR depend on your Mac and media codecs.</p></article>
+        <article class="feature"><span class="feature-icon">◉</span><h3>Your discs, browsable</h3><p>Find mounted DVD and Blu-ray data discs and open video files directly from the disc.</p></article>
+        <article class="feature"><span class="feature-icon">◇</span><h3>MKV, made watchable</h3><p>Remux compatible MKV files without re-encoding, or convert to Mac-friendly H.264 and AAC when needed.</p></article>
+      </div>
+    </section>
+
+    <section class="content wrap" id="requirements">
+      <div class="section-heading">
+        <h2>A couple of things to know.</h2>
+      </div>
+      <div class="requirements">
+        <div><h3>System requirements</h3><p>macOS 13 or later. One universal download supports Apple Silicon and Intel. Supported playback formats and 4K performance depend on your system.</p></div>
+        <div><h3>MKV playback</h3><p>Install FFmpeg separately with <code>brew install ffmpeg</code>. Video and audio conversion runs locally on your Mac. Discs must be mounted; this is file playback, not DVD or Blu-ray menu navigation. Encrypted Blu-ray playback isn't supported.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <span>© <span id="year"></span> Northstar Video Player</span>
+    <span><a href="https://github.com/thomaswales26-hash/videoplayer">Source on GitHub</a>&nbsp; · &nbsp;<a href="https://github.com/thomaswales26-hash/videoplayer/releases">Release notes</a></span>
+  </footer>
+
+  <script>
+    const repository = "thomaswales26-hash/videoplayer";
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
+      headers: { Accept: "application/vnd.github+json" }
+    }).then(response => {
+      if (!response.ok) throw new Error("Latest release is not available");
+      return response.json();
+    }).then(release => {
+      const assets = release.assets || [];
+      const dmg = assets.find(asset => asset.name.endsWith(".dmg"));
+      const pkg = assets.find(asset => asset.name.endsWith(".pkg"));
+      const dmgLink = document.getElementById("dmg-link");
+      const pkgLink = document.getElementById("pkg-link");
+      if (dmg) {
+        dmgLink.href = dmg.browser_download_url;
+        dmgLink.setAttribute("download", dmg.name);
+      }
+      if (pkg) {
+        pkgLink.href = pkg.browser_download_url;
+        pkgLink.setAttribute("download", pkg.name);
+      }
+      if (release.tag_name) {
+        const note = document.getElementById("release-note");
+        note.replaceChildren(document.createTextNode(
+          `Latest: ${release.tag_name} · Universal build · macOS 13 or later · `
+        ));
+        const releases = document.createElement("a");
+        releases.href = `https://github.com/${repository}/releases`;
+        releases.textContent = "all releases";
+        note.append(releases);
+      }
+    }).catch(() => {});
+  </script>
+</body>
+</html>
