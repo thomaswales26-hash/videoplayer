@@ -65,6 +65,9 @@ private final class PlayerViewController: NSViewController {
     private var discButtons: [NSButton: DiscVolume] = [:]
     private var mainOpenButton: NSButton?
     private var itemObservation: NSKeyValueObservation?
+    private var conversionProcess: Process?
+    private var conversionGeneration = 0
+    private var temporaryPlaybackDirectory: URL?
     private var selectedURL: URL?
 
     override func loadView() {
@@ -344,7 +347,7 @@ private final class PlayerViewController: NSViewController {
         let panel = NSOpenPanel()
         panel.title = "Open a video"
         panel.message = "Choose a video file to play."
-        panel.allowedContentTypes = [.movie, .video, .mpeg4Movie, .quickTimeMovie]
+        panel.allowedContentTypes = videoContentTypes
         panel.allowsOtherFileTypes = true
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -413,7 +416,7 @@ private final class PlayerViewController: NSViewController {
         panel.title = "Browse \(disc.name)"
         panel.message = "Choose a video file from the mounted disc."
         panel.directoryURL = disc.url
-        panel.allowedContentTypes = [.movie, .video, .mpeg4Movie, .quickTimeMovie]
+        panel.allowedContentTypes = videoContentTypes
         panel.allowsOtherFileTypes = true
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -423,8 +426,149 @@ private final class PlayerViewController: NSViewController {
     }
 
     private func startPlayback(_ url: URL) {
-        selectedURL = url
-        let item = AVPlayerItem(url: url)
+        cancelPendingConversion()
+        if url.pathExtension.lowercased() == "mkv" {
+            convertAndPlayMKV(url, generation: conversionGeneration)
+        } else {
+            installVideo(url, playbackURL: url)
+        }
+    }
+
+    private var videoContentTypes: [UTType] {
+        var types: [UTType] = [.movie, .video, .mpeg4Movie, .quickTimeMovie]
+        if let matroska = UTType(filenameExtension: "mkv") {
+            types.append(matroska)
+        }
+        return types
+    }
+
+    private func convertAndPlayMKV(_ url: URL, generation: Int) {
+        guard let ffmpeg = findFFmpeg() else {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "FFmpeg is needed to play MKV files"
+            alert.informativeText = "Install FFmpeg with Homebrew (brew install ffmpeg), then reopen the video."
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Northstar-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            showPlaybackError(error)
+            return
+        }
+
+        detailLabel.stringValue = "Preparing MKV for playback…"
+        let remuxed = directory.appendingPathComponent("remuxed.mp4")
+        runFFmpeg(
+            ffmpeg: ffmpeg,
+            arguments: [
+                "-nostdin", "-y", "-i", url.path,
+                "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
+                "-c", "copy", "-movflags", "+faststart", "-f", "mp4", remuxed.path
+            ],
+            generation: generation
+        ) { [weak self] success in
+            guard let self, generation == self.conversionGeneration else {
+                try? FileManager.default.removeItem(at: directory)
+                return
+            }
+            if success {
+                self.installVideo(url, playbackURL: remuxed, temporaryDirectory: directory)
+                return
+            }
+
+            try? FileManager.default.removeItem(at: remuxed)
+            let converted = directory.appendingPathComponent("converted.mp4")
+            self.runFFmpeg(
+                ffmpeg: ffmpeg,
+                arguments: [
+                    "-nostdin", "-y", "-i", url.path,
+                    "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
+                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                    "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
+                    "-movflags", "+faststart", "-f", "mp4", converted.path
+                ],
+                generation: generation
+            ) { [weak self] transcoded in
+                guard let self, generation == self.conversionGeneration else {
+                    try? FileManager.default.removeItem(at: directory)
+                    return
+                }
+                guard transcoded else {
+                    try? FileManager.default.removeItem(at: directory)
+                    self.showMKVConversionError()
+                    return
+                }
+                self.installVideo(url, playbackURL: converted, temporaryDirectory: directory)
+            }
+        }
+    }
+
+    private func runFFmpeg(
+        ffmpeg: URL,
+        arguments: [String],
+        generation: Int,
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard generation == conversionGeneration else { return }
+        let process = Process()
+        process.executableURL = ffmpeg
+        process.arguments = arguments
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        process.terminationHandler = { [weak self] process in
+            DispatchQueue.main.async {
+                if let self, self.conversionProcess === process {
+                    self.conversionProcess = nil
+                }
+                completion(process.terminationReason == .exit && process.terminationStatus == 0)
+            }
+        }
+        do {
+            try process.run()
+            conversionProcess = process
+        } catch {
+            conversionProcess = nil
+            showPlaybackError(error)
+            completion(false)
+        }
+    }
+
+    private func findFFmpeg() -> URL? {
+        let candidates = [
+            "/opt/homebrew/bin/ffmpeg",
+            "/usr/local/bin/ffmpeg",
+            "/usr/bin/ffmpeg"
+        ] + (ProcessInfo.processInfo.environment["PATH"] ?? "")
+            .split(separator: ":")
+            .map { "\($0)/ffmpeg" }
+        return candidates
+            .map { URL(fileURLWithPath: $0) }
+            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
+    }
+
+    private func cancelPendingConversion() {
+        conversionGeneration += 1
+        if conversionProcess?.isRunning == true {
+            conversionProcess?.terminate()
+        }
+        conversionProcess = nil
+    }
+
+    private func installVideo(
+        _ sourceURL: URL,
+        playbackURL: URL,
+        temporaryDirectory: URL? = nil
+    ) {
+        let oldTemporaryDirectory = self.temporaryPlaybackDirectory
+        selectedURL = sourceURL
+        self.temporaryPlaybackDirectory = temporaryDirectory
+        let item = AVPlayerItem(url: playbackURL)
         itemObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
             DispatchQueue.main.async {
@@ -432,12 +576,28 @@ private final class PlayerViewController: NSViewController {
             }
         }
         player.replaceCurrentItem(with: item)
+        if let oldTemporaryDirectory {
+            try? FileManager.default.removeItem(at: oldTemporaryDirectory)
+        }
         playerView.isHidden = false
         welcomeView.isHidden = true
-        titleLabel.stringValue = url.deletingPathExtension().lastPathComponent
-        detailLabel.stringValue = url.deletingLastPathComponent().path
+        titleLabel.stringValue = sourceURL.deletingPathExtension().lastPathComponent
+        detailLabel.stringValue = sourceURL.deletingLastPathComponent().path
         mainOpenButton?.isHidden = false
         player.play()
+    }
+
+    private func showMKVConversionError() {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "This MKV couldn't be converted for playback"
+        alert.informativeText = "FFmpeg couldn't remux or transcode this file. It may use codecs that FFmpeg doesn't support."
+        alert.addButton(withTitle: "OK")
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     private func showPlaybackError(_ error: Error?) {

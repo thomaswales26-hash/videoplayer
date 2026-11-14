@@ -2,8 +2,14 @@
 
 A native macOS video player with a universal Apple Silicon and Intel build. It
 uses AVKit/AVFoundation for playback, includes standard transport and
-fullscreen controls, and detects mounted DVD/Blu-ray data volumes so you can
-browse their video files.
+fullscreen controls, plays Matroska (MKV) files through FFmpeg, and detects
+mounted DVD/Blu-ray data volumes so you can browse their video files.
+
+MKV playback requires FFmpeg installed on the Mac. Install it with
+`brew install ffmpeg`. Northstar first attempts a lossless remux into a
+temporary MP4; if the contained codecs aren't MP4-compatible, it transcodes
+video to H.264 and audio to AAC for AVKit. The temporary file is removed when
+you switch videos.
 
 ## Build and run
 
@@ -12,12 +18,13 @@ Requires macOS 13 or later and the Apple Command Line Tools (Swift, `xcrun`,
 
 ```sh
 ./build.sh
-open "build/Northstar Video Player.app"
+open "build/artifacts/Northstar Video Player.app"
 ```
 
 The build produces a universal app bundle and an installer package:
 
-- `build/Northstar Video Player.app` — contains both `arm64` and `x86_64` slices.
+- `build/artifacts/Northstar Video Player.app` — contains both `arm64` and
+  `x86_64` slices.
 - `build/Northstar-Video-Player-macOS-universal.pkg` — installs the app in
   `/Applications`.
 - `build/Northstar-Video-Player-macOS-universal.dmg` — drag-and-drop disk image

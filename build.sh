@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
-APP="$ROOT/build/Northstar Video Player.app"
+APP="$ROOT/build/artifacts/Northstar Video Player.app"
 CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT/Info.plist")"
@@ -26,11 +26,15 @@ for ARCH in arm64 x86_64; do
         -o "$TMP/$ARCH"
 done
 
+rm -f "$MACOS/UniversalVideoPlayer"
 lipo -create "$TMP/arm64" "$TMP/x86_64" -output "$MACOS/UniversalVideoPlayer"
 cp "$ROOT/Info.plist" "$CONTENTS/Info.plist"
 codesign --force --deep --sign - "$APP"
+PACKAGE_ROOT="$TMP/package-root"
+mkdir -p "$PACKAGE_ROOT"
+cp -R "$APP" "$PACKAGE_ROOT/"
 pkgbuild \
-    --component "$APP" \
+    --component "$PACKAGE_ROOT/Northstar Video Player.app" \
     --install-location /Applications \
     --identifier com.northstar.UniversalVideoPlayer \
     --version "$VERSION" \

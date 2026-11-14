@@ -24,14 +24,14 @@ jobs:
 
       - name: Verify universal architectures
         run: |
-          lipo -archs "build/Northstar Video Player.app/Contents/MacOS/UniversalVideoPlayer" \
+          lipo -archs "build/artifacts/Northstar Video Player.app/Contents/MacOS/UniversalVideoPlayer" \
             | grep -Eq 'arm64.*x86_64|x86_64.*arm64'
-          codesign --verify --deep --strict "build/Northstar Video Player.app"
+          codesign --verify --deep --strict "build/artifacts/Northstar Video Player.app"
 
       - name: Package app
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
-            "build/Northstar Video Player.app" \
+            "build/artifacts/Northstar Video Player.app" \
             "build/Northstar-Video-Player-macOS-universal.zip"
           pkgutil --payload-files "build/Northstar-Video-Player-macOS-universal.pkg" \
             | grep -q 'Northstar Video Player.app/Contents/MacOS/UniversalVideoPlayer'
