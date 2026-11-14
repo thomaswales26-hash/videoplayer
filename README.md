@@ -1,0 +1,37 @@
+# Northstar Video Player
+
+A native macOS video player with a universal Apple Silicon and Intel build. It
+uses AVKit/AVFoundation for playback, includes standard transport and
+fullscreen controls, and detects mounted DVD/Blu-ray data volumes so you can
+browse their video files.
+
+## Build and run
+
+Requires macOS 13 or later and the Apple Command Line Tools (Swift, `xcrun`,
+`lipo`, and `codesign`).
+
+```sh
+./build.sh
+open "build/Northstar Video Player.app"
+```
+
+The build produces a universal app bundle and an installer package:
+
+- `build/Northstar Video Player.app` — contains both `arm64` and `x86_64` slices.
+- `build/Northstar-Video-Player-macOS-universal.pkg` — installs the app in
+  `/Applications`.
+- `build/Northstar-Video-Player-macOS-universal.dmg` — drag-and-drop disk image
+  with an Applications shortcut.
+
+The installer is not Developer ID signed or notarized. macOS may require
+confirming the install through Privacy & Security when opening a downloaded
+package.
+
+## Disc and format notes
+
+Disc browsing works with mounted volumes containing a `VIDEO_TS` (DVD) or
+`BDMV` (Blu-ray) folder. Choose a video file from the disc in the file picker.
+This is file playback, not DVD/Blu-ray menu navigation. Commercial encrypted
+Blu-ray playback is not supported; it requires appropriately licensed
+decryption software. Playback formats and 4K/HDR performance depend on the
+codecs and hardware supported by the installed version of macOS.
